@@ -14,6 +14,7 @@ from .constants import (
     LINUX_AMD64,
     MACOSX_AMD64,
     WINDOWS_AMD64,
+    LINUX_AARCH64,
     EARLIEST_RELEASE,
     SOLC_SELECT_DIR,
     ARTIFACTS_DIR,
@@ -126,6 +127,18 @@ def install_artifacts(versions: [str], silent: bool = False) -> bool:
             )
         else:
             Path.chmod(artifact_file_dir.joinpath(f"solc-{version}"), 0o775)
+
+        if os.path.exists(os.path.join('/etc', 'NIXOS')):
+            # see: https://discourse.nixos.org/t/detect-that-bash-script-is-running-under-nixos/11402/3
+            # patch the executable via patchelf
+            cmd = """patchelf --set-interpreter \\
+                $(cat $NIX_CC/nix-support/dynamic-linker) \\
+                {}""".format(artifact_file_dir.joinpath(f"solc-{version}"))
+            if not silent:
+                print(f"NIXOS: applying patchelf")
+            if os.system(cmd) != 0:
+                print(f"NIXOS: patchelf failed")
+
         if not silent:
             print(f"Version '{version}' installed.")
     return True
@@ -186,6 +199,12 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
             return (
                 CRYTIC_SOLC_ARTIFACTS + artifact,
                 CRYTIC_SOLC_JSON,
+            )
+    if soliditylang_platform() == LINUX_AARCH64:
+        if version != "" and is_older_linux(version):
+            return (
+                LINUX_AARCH64_SOLC_ARTIFACTS + artifact,
+                LINUX_AARCH64_SOLC_JSON,
             )
     return (
         f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}",
@@ -265,7 +284,11 @@ def get_available_versions() -> [str]:
 
 def soliditylang_platform() -> str:
     if sys.platform.startswith("linux"):
-        platform = LINUX_AMD64
+        import platform
+        if platform.machine() == "aarch64":
+            platorm = LINUX_AARCH64
+        else:
+            platform = LINUX_AMD64
     elif sys.platform == "darwin":
         platform = MACOSX_AMD64
     elif sys.platform in ["win32", "cygwin"]:
