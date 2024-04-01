@@ -286,7 +286,7 @@ def soliditylang_platform() -> str:
     if sys.platform.startswith("linux"):
         import platform
         if platform.machine() == "aarch64":
-            platorm = LINUX_AARCH64
+            platform = LINUX_AARCH64
         else:
             platform = LINUX_AMD64
     elif sys.platform == "darwin":
