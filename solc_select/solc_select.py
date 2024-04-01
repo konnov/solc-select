@@ -201,7 +201,7 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
                 CRYTIC_SOLC_JSON,
             )
     if soliditylang_platform() == LINUX_AARCH64:
-        if version != "" and is_older_linux(version):
+        if version != "":
             return (
                 LINUX_AARCH64_SOLC_ARTIFACTS + artifact,
                 LINUX_AARCH64_SOLC_JSON,
@@ -284,8 +284,8 @@ def get_available_versions() -> [str]:
 
 def soliditylang_platform() -> str:
     if sys.platform.startswith("linux"):
-        import platform
-        if platform.machine() == "aarch64":
+        from platform import machine
+        if machine() == "aarch64":
             platform = LINUX_AARCH64
         else:
             platform = LINUX_AMD64
